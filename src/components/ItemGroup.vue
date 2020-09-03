@@ -88,6 +88,7 @@
           >
             <item-group-cell
               :field-name="field.name"
+              :field="field"
               :index="index"
               :item="item"
               @saved="item[field.name] = $event"
@@ -129,7 +130,6 @@ export default {
     getBg(field, value) {
       if (value && field.rules && field.rules.bg) {
         const bg = field.rules.bg.find((rule) => {
-          console.log(value, rule.value);
           return value.toLowerCase() == rule.value.toLowerCase();
         });
         return bg ? "bg-" + bg.result + "-300" : "";

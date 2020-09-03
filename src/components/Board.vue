@@ -6,7 +6,9 @@
       </div>
 
       <div class="w-full">
-        <button class="btn btn-blue" @click="createMode=!createMode">New Task</button>
+        <button class="btn btn-blue" @click="createMode = !createMode">
+          New Task
+        </button>
         <input
           type="search"
           class="form-input ml-2"
@@ -29,24 +31,25 @@
       :key="stage.name"
       :stage="stage"
       :items="items"
-      :new-item="newItem"
       :create-mode="createMode"
       @saved="addItem"
       class="mt-4"
     >
-
     </item-group>
+    <ic-schedule endpoint="/"></ic-schedule>
   </div>
 </template>
 
 <script>
 import ItemGroup from "./ItemGroup";
+import IcSchedule from "./schedule";
 import { defineComponent } from "vue";
 
 export default defineComponent({
   name: "HelloWorld",
   components: {
-    ItemGroup
+    ItemGroup,
+    IcSchedule
   },
   props: {
     msg: String
@@ -68,23 +71,20 @@ export default defineComponent({
             {
               name: "status",
               title: "Status",
-              rules: 
+              type: "select",
+              options: [
+                { name: "todo", label: "To Do", color: "red" },
+                { name: "delegate", label: "Delegate", color: "yellow" },
+                { name: "delete", label: "Delete", color: "red" },
+                { name: "backlog", label: "Backlog", color: "gray" },
+                { name: "done", label: "Done", color: "green" }
+              ],
+              rules: [
                 {
-                  bg: [
-                    {
-                      result: "green",
-                      value: "done"
-                    },
-                    {
-                      result: "blue",
-                      value: "to do"
-                    },
-                    {
-                      result: "red",
-                      value: "high"
-                    }
-                  ]
+                  name: "bg",
+                  reference: "options"
                 }
+              ]
             },
             {
               name: "due_date",
@@ -93,62 +93,79 @@ export default defineComponent({
             {
               name: "priority",
               title: "Priority",
-              rules: 
-                {
-                  bg: [
-                    {
-                      result: "green",
-                      value: "low"
-                    },
-                    {
-                      result: "blue",
-                      value: "medium"
-                    },
-                    {
-                      result: "red",
-                      value: "high"
-                    }
-                  ]
-                }
+              type: "select",
+              options: [
+                { name: "high", color: "red" },
+                { name: "medium", color: "blue" },
+                { name: "low", color: "gree" }
+              ],
+              rules: {
+                bg: [
+                  {
+                    result: "green",
+                    value: "low"
+                  },
+                  {
+                    result: "blue",
+                    value: "medium"
+                  },
+                  {
+                    result: "red",
+                    value: "high"
+                  }
+                ]
+              }
             }
+          ],
+          priorities: [
+            { name: "high", color: "red" },
+            { name: "medium", color: "blue" },
+            { name: "low", color: "gree" }
+          ],
+          status: [
+            { name: "todo", label: "To Do", color: "red" },
+            { name: "delegate", label: "Delegate", color: "yellow" },
+            { name: "delete", label: "Delete", color: "red" },
+            { name: "backlog", label: "Backlog", color: "gray" },
+            { name: "done", label: "Done", color: "green" }
           ]
         }
       ],
-      rules: [],
-      projects: [],
       items: [
         {
           title: "Test",
           owner: "Jesus Guerrero",
-          status: "To Do",
+          status: "todo",
           due_date: new Date().toISOString().slice(0, 10),
           priority: "High"
         },
-         {
+        {
           title: "Test",
           owner: "Jesus Guerrero",
-          status: "To Do",
+          status: "todo",
           due_date: new Date().toISOString().slice(0, 10),
           priority: "low"
         },
         {
           title: "Test",
           owner: "Jesus Guerrero",
-          status: "To Do",
+          status: "todo",
           due_date: new Date().toISOString().slice(0, 10),
           priority: "medium"
         }
       ],
-      priorities: [],
-      status: [],
       comments: [],
-      contacts: []
+      contacts: [
+        {
+          name: "Jesus Guerrero"
+        }
+      ]
     };
   },
   methods: {
     addItem(newItem) {
-       this.items.unshift(newItem);
-       this.createMode = false;
+      this.items.unshift(newItem);
+      this.createMode = false;
     }
   }
 });

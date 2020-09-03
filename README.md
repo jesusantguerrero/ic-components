@@ -1,4 +1,4 @@
-# ic-components
+# sunday
 
 ## Project setup
 ```
