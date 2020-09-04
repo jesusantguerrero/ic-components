@@ -6,8 +6,10 @@
 </template>
 
 <script>
+import { format } from "date-fns";
 import Controls from "./controls";
 import Grid from "./grid";
+import axios from "axios";
 
 export default {
   props: {
@@ -30,48 +32,32 @@ export default {
       schedule: []
     };
   },
-
-  created() {
-    this.getSchedules();
-  },
   computed: {
-    horaActual() {
-      if (this.modoManual) {
-        return this.horaActiva;
-      } else {
-        return new Date().getHours();
-      }
-    },
-
-    programaActual() {
-      const diaActual = this.programacion.find(dia => dia.dia == this.hoy);
-      return diaActual.programas.find(
-        programa => programa.hora == this.horaActual
-      );
+    scheduleURL() {
+      return `${this.endpoint}?fecha=${format(this.diaActivo, "yyyy-MM-dd")}`;
+    }
+  },
+  watch: {
+    scheduleURL: {
+      handler() {
+        this.getSchedules();
+      },
+      immediate: true
     }
   },
   methods: {
-    getSchedules() {
-      this.setBackupData();
-      return;
-      //   fetch(this.endpoint + "?action=get_schedules", {
-      //     method: "get"
-      //   })
-      //     .then(response => response.json())
-      //     .then(response => {
-      //       if (!response) {
-      //         this.setBackupData();
-      //         return;
-      //       }
-      //       this.schedule = response;
-      //     })
-      //     .catch(() => {
-      //       this.setBackupData();
-      //     });
+    async getSchedules() {
+      this.schedule = await axios(this.scheduleURL)
+        .then(({ data }) => {
+          return data;
+        })
+        .catch(() => {
+          return this.getBackupData();
+        });
     },
 
-    setBackupData() {
-      this.schedule = [
+    getBackupData() {
+      return [
         {
           program_id: "1",
           nombre: "Desayunando",

@@ -70,8 +70,14 @@ export default {
       mostrarTodos: false
     };
   },
-  created() {
-    this.agenda = this.getAgenda();
+  watch: {
+    schedule: {
+      handler() {
+        console.log(this.schedule);
+        this.agenda = this.getAgenda();
+      },
+      immediate: true
+    }
   },
   computed: {
     horaActual() {
@@ -147,9 +153,7 @@ export default {
           ? programa.hora.split(":")[0]
           : programa.hora;
       return (
-        Number(hours) < this.horaActual &&
-        this.isToday &&
-        !this.mostrarTodos
+        Number(hours) < this.horaActual && this.isToday && !this.mostrarTodos
       );
     },
 
