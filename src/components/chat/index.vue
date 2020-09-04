@@ -7,19 +7,24 @@
     ></chat-Login>
 
     <div class="home-container" v-else>
-      <div class="channels bg-gray-200 h-screen">
+      <div class="channels bg-gray-200 h-screen" v-if="!activeChannel">
         <div>
           <div
             v-for="channel in channels"
             :key="channel.id"
             class=" border-2 border-gray-400 px-2 py-5"
+            @click.prevent="joinChannel(channel)"
           >
             {{ channel.friendlyName }}
           </div>
         </div>
       </div>
-      <div class="contacts"></div>
-      <div class="chat"></div>
+      <chat-messager
+        :channel="activeChannel"
+        v-if="activeChannel"
+        @left="leaveChannel"
+      >
+      </chat-messager>
     </div>
   </div>
 </template>
@@ -27,15 +32,19 @@
 <script>
 import * as Twilio from "twilio-chat";
 import ChatLogin from "./login";
+import ChatMessager from "./messager";
 
 export default {
   components: {
-    ChatLogin
+    ChatLogin,
+    ChatMessager
   },
   data() {
     return {
       client: null,
       channels: [],
+      messages: [],
+      activeChannel: null,
       endpoint: "http://localhost:8080",
       userContext: { identity: null }
     };
@@ -56,18 +65,32 @@ export default {
         console.log("updated");
       });
       client.getSubscribedChannels().then(this.updateChannels);
-      this.loadChannelEvents();
+      this.loadChannelEvents(client);
     },
 
     onTokenAboutToExpire() {
       console.log("about to expire");
     },
 
-    updateChannels() {
-      this.client.getSubscribedChannels().then(page => {
-        this.channels = page.items;
-      });
+    async updateChannels() {
+      const subscribed = await this.client
+        .getSubscribedChannels()
+        .then(page => {
+          return page.items;
+        });
+
+      this.channels = await this.client
+        .getPublicChannelDescriptors()
+        .then(page => {
+          return page.items;
+        });
       console.log("update channels");
+    },
+
+    leaveChannel(channel) {
+      channel.removeListener("messageAdded", this.updateUnreadMessages);
+      this.activeChannel = null;
+      this.updateChannels();
     },
 
     updateUnreadMessages() {
@@ -88,6 +111,81 @@ export default {
       client.on("channelUpdated", this.updateChannels);
       client.on("channelLeft", this.leaveChannel);
       client.on("channelRemoved", this.leaveChannel);
+    },
+
+    // chat functions
+    removeMessage() {
+      console.log("removed");
+    },
+
+    addMessage(message) {
+      this.messages.push(message)
+    },
+
+    updateMessage() {
+      console.log("removed");
+    },
+
+    joinChannel(channel) {
+      channel.getChannel().then(channel => {
+        channel
+          .join()
+          .then(channel => {
+            this.setActiveChannel(channel);
+          })
+          .catch(err => {
+            this.setActiveChannel(channel);
+          });
+      });
+    },
+
+    removeActiveChannelListeners() {
+      if (this.activeChannel) {
+        this.activeChannel.removeListener("messageAdded", this.addMessage);
+        this.activeChannel.removeListener("messageRemoved", this.removeMessage);
+        this.activeChannel.removeListener("messageUpdated", this.updateMessage);
+        this.activeChannel.removeListener("memberUpdated", this.updateMember);
+      }
+    },
+
+    updateMembers() {
+      console.log("updated");
+    },
+
+    updateMember() {
+      console.log("updated");
+    },
+
+    sendMessage(message) {
+      this.activeChannel.sendMessage(message);
+    },
+
+    setActiveChannel(channel) {
+      this.removeActiveChannelListeners();
+      this.activeChannel = channel;
+
+      channel.getMessages(30).then(page => {
+        this.activeChannelPage = page;
+        this.messages = page.items;
+
+        channel.on("messageAdded", this.addMessage);
+        channel.on("messageUpdated", this.updateMessage);
+        channel.on("messageRemoved", this.removeMessage);
+      });
+
+      //   channel.on("typingStarted", function(member) {
+      //     member.getUser().then(user => {
+      //       this.typingMembers.add(user.friendlyName || member.identity);
+      //       this.updateTypingIndicator();
+      //     });
+      //   });
+
+      //   channel.on("typingEnded", function(member) {
+      // member.getUser().then(user => {
+      //   this.typingMembers.delete(user.friendlyName || member.identity);
+      //   this.updateTypingIndicator();
+      // });
+      //   });
     }
   }
 };

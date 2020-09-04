@@ -44,6 +44,10 @@ export default {
       }
     };
   },
+  mounted() {
+    this.formData.indentity = "jesusant.guerrero@gmai.com";
+    this.login();
+  },
   methods: {
     login() {
       this.getAccessToken(this.formData.indentity);
