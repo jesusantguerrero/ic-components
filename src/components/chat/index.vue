@@ -9,14 +9,36 @@
     <div class="home-container" v-else>
       <div class="channels bg-gray-200 h-screen" v-if="!activeChannel">
         <div>
-          <div
-            v-for="channel in channels"
-            :key="channel.id"
-            class=" border-2 border-gray-400 px-2 py-5"
-            @click.prevent="joinChannel(channel)"
+          <chat-header
+            :show-back-button="true"
+            :show-settings="!addNewChat"
+            :left-icon="!addNewChat ? 'fa fa-menu' : 'fa fa-chevron-left'"
+            right-icon="fa fa-plus"
+            :title="headerTitle"
+            @back="addNewChat = !addNewChat"
+            @settings="addNewChat = !addNewChat"
           >
-            {{ channel.friendlyName }}
-          </div>
+          </chat-header>
+          <template v-if="!addNewChat">
+            <chat-item
+              v-for="channel in channels"
+              :key="channel.id"
+              :channel="channel"
+              :user-context="userContext"
+              @click="joinChannel(channel)"
+            >
+            </chat-item>
+          </template>
+          <template v-else>
+            <div
+              v-for="contact in contacts"
+              :key="contact.email"
+              @click="createOrJoin(contact)"
+              class="border-b-2 border-gray-400 mx-5 pl-10 px-2 py-5 text-left cursor-pointer hover:bg-gray-400"
+            >
+              {{ contact.email }}
+            </div>
+          </template>
         </div>
       </div>
       <chat-messager
@@ -33,17 +55,33 @@
 import * as Twilio from "twilio-chat";
 import ChatLogin from "./login";
 import ChatMessager from "./messager";
+import ChatHeader from "./header";
+import ChatItem from "./list-item";
 
 export default {
   components: {
     ChatLogin,
-    ChatMessager
+    ChatMessager,
+    ChatHeader,
+    ChatItem
   },
   data() {
     return {
       client: null,
+      addNewChat: false,
       channels: [],
       messages: [],
+      contacts: [
+        {
+          email: "freesgen@mctekk.com"
+        },
+        {
+          email: "jesusant@mctekk.com"
+        },
+        {
+          email: "jesusant.guerrero@gmail.com"
+        }
+      ],
       activeChannel: null,
       endpoint: "http://localhost:8080",
       userContext: { identity: null }
@@ -52,6 +90,9 @@ export default {
   computed: {
     isLoggedIn() {
       return this.userContext.identity;
+    },
+    headerTitle() {
+      return this.addNewChat ? "Contacts" : "Dealer One";
     }
   },
   methods: {
@@ -64,7 +105,7 @@ export default {
       client.on("updated", () => {
         console.log("updated");
       });
-      client.getSubscribedChannels().then(this.updateChannels);
+      this.updateChannels();
       this.loadChannelEvents(client);
     },
 
@@ -72,18 +113,18 @@ export default {
       console.log("about to expire");
     },
 
-    async updateChannels() {
+    async updateChannels(channel) {
+      if (channel && !channel.status == "joined") {
+        channel.join();
+      }
+
       const subscribed = await this.client
         .getSubscribedChannels()
         .then(page => {
-          return page.items;
+          return page.items.map(item => item);
         });
 
-      this.channels = await this.client
-        .getPublicChannelDescriptors()
-        .then(page => {
-          return page.items;
-        });
+      this.channels = subscribed;
       console.log("update channels");
     },
 
@@ -119,24 +160,40 @@ export default {
     },
 
     addMessage(message) {
-      this.messages.push(message)
+      this.messages.push(message);
     },
 
     updateMessage() {
       console.log("removed");
     },
 
-    joinChannel(channel) {
-      channel.getChannel().then(channel => {
-        channel
-          .join()
-          .then(channel => {
-            this.setActiveChannel(channel);
-          })
-          .catch(err => {
-            this.setActiveChannel(channel);
-          });
+    async createOrJoin(contact) {
+      const channel = this.channels.find(channel => {
+        return channel.uniqueName && channel.uniqueName.includes(contact.email);
       });
+      if (channel) {
+        this.setActiveChannel(channel);
+      } else {
+        this.client
+          .createChannel({
+            friendlyName: contact.email,
+            isPrivate: true,
+            uniqueName: `${this.userContext.identity}-${contact.email}`
+          })
+          .then(async channel => {
+            await channel.invite(contact.email);
+            return channel.join();
+          })
+          .then(this.setActiveChannel);
+      }
+    },
+
+    joinChannel(channel) {
+      if (channel.status == "joined") {
+        this.setActiveChannel(channel);
+      } else {
+        channel.join().then(this.setActiveChannel);
+      }
     },
 
     removeActiveChannelListeners() {
@@ -163,29 +220,6 @@ export default {
     setActiveChannel(channel) {
       this.removeActiveChannelListeners();
       this.activeChannel = channel;
-
-      channel.getMessages(30).then(page => {
-        this.activeChannelPage = page;
-        this.messages = page.items;
-
-        channel.on("messageAdded", this.addMessage);
-        channel.on("messageUpdated", this.updateMessage);
-        channel.on("messageRemoved", this.removeMessage);
-      });
-
-      //   channel.on("typingStarted", function(member) {
-      //     member.getUser().then(user => {
-      //       this.typingMembers.add(user.friendlyName || member.identity);
-      //       this.updateTypingIndicator();
-      //     });
-      //   });
-
-      //   channel.on("typingEnded", function(member) {
-      // member.getUser().then(user => {
-      //   this.typingMembers.delete(user.friendlyName || member.identity);
-      //   this.updateTypingIndicator();
-      // });
-      //   });
     }
   }
 };

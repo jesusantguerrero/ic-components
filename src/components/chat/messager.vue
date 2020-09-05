@@ -1,30 +1,29 @@
 <template>
   <div class="login h-screen">
-    <header class="bg-blue-500 grid grid-cols-8 text-white">
-      <div
-        class="back-button py-5 px-5 hover:bg-blue-700 flex items-center justify-center"
-        @click.prevent="leaveChannel"
-      >
-        <i class="fa fa-chevron-left"></i>
+    <chat-header
+      :show-back-button="true"
+      :show-settings="true"
+      :title="channel.friendlyName"
+      @back="leaveChannel"
+      @settings="leaveChannel"
+    >
+    </chat-header>
+    <div>
+      <div v-for="message in messages" :key="message.state.sid">
+        {{ message.state.body }}
       </div>
-
-      <div class="py-5 px-5 col-start-2 col-end-8 text-left">
-        <h4 class="text-2xl">
-          {{ channel.friendlyName }}
-        </h4>
-        <p>{{ description }}</p>
-      </div>
-
-      <div
-        class="back-button py-5 px-5 hover:bg-blue-700 flex items-center justify-center"
-      >
-        <i class="fa fa-cogs"></i>
-      </div>
-    </header>
+    </div>
+    <input
+      type="text"
+      v-model="formData.message"
+      @keydown.enter="sendMessage"
+    />
   </div>
 </template>
 
 <script>
+import ChatHeader from "./header";
+
 export default {
   props: {
     channel: {
@@ -32,10 +31,25 @@ export default {
       required: true
     }
   },
+  components: {
+    ChatHeader
+  },
   data() {
     return {
-      description: ""
+      description: "",
+      messages: [],
+      formData: {
+        message: ""
+      }
     };
+  },
+  watch: {
+    "channel.friendlyName": {
+      handler() {
+        this.getMessages();
+      },
+      immediate: true
+    }
   },
   created() {
     this.getDescription();
@@ -48,8 +62,46 @@ export default {
     },
     leaveChannel() {
       this.$emit("left", this.channel);
+    },
+    sendMessage() {
+      this.channel.sendMessage(this.formData.message);
+      this.formData.message = "";
+    },
+    getMessages() {
+      this.channel.getMessages(30).then(page => {
+        this.activeChannelPage = page;
+        this.messages = page.items;
+        this.channel.on("messageAdded", this.addMessage);
+        this.channel.on("messageUpdated", this.updateMessage);
+        this.channel.on("messageRemoved", this.removeMessage);
+      });
+
+      //   channel.on("typingStarted", function(member) {
+      //     member.getUser().then(user => {
+      //       this.typingMembers.add(user.friendlyName || member.identity);
+      //       this.updateTypingIndicator();
+      //     });
+      //   });
+
+      //   channel.on("typingEnded", function(member) {
+      // member.getUser().then(user => {
+      //   this.typingMembers.delete(user.friendlyName || member.identity);
+      //   this.updateTypingIndicator();
+      // });
+      //   });
+    },
+    // chat functions
+    removeMessage() {
+      console.log("removed");
+    },
+
+    addMessage(message) {
+      this.messages.push(message);
+    },
+
+    updateMessage() {
+      console.log("removed");
     }
-    // todo Update members or show members
   }
 };
 </script>

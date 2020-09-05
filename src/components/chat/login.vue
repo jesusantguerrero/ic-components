@@ -45,8 +45,11 @@ export default {
     };
   },
   mounted() {
-    this.formData.indentity = "jesusant.guerrero@gmai.com";
-    this.login();
+    const token = localStorage.getItem("identity");
+    if (token) {
+      this.formData.indentity = token;
+      this.login();
+    }
   },
   methods: {
     login() {
@@ -59,6 +62,7 @@ export default {
         url: `${this.endpoint}/getToken?identity=${identity}`
       })
         .then(({ data }) => {
+          localStorage.setItem("identity", identity);
           this.$emit("logged", data, identity);
         })
         .catch(err => {
