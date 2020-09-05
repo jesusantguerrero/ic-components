@@ -53,7 +53,6 @@ export default {
       return this.typing.length ? "Typing..." : "";
     },
     channelName() {
-      console.log(this.channel.attributes.receiver);
       return this.userContext.identity == this.channel.attributes.receiver
         ? this.channel.createdBy
         : this.channel.friendlyName;

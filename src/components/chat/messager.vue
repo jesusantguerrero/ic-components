@@ -17,7 +17,19 @@
           class="message-list__item"
           :class="{ 'message-sender': isSender(message) }"
         >
-          {{ message.state.body }}
+          <span
+            v-if="channel.type == 'public'"
+            class="sender-name block mb-1 text-orange-500"
+            :class="{ me: isSender(message) }"
+          >
+            {{ message.author }}:</span
+          >
+          <div>
+            <div>{{ message.state.body }}</div>
+            <small class="text-right w-full block text-gray-400 mt-2">
+              {{ message.state.timestamp.toISOString().slice(11, 16) }}
+            </small>
+          </div>
         </div>
       </div>
     </div>
@@ -55,7 +67,7 @@ export default {
       description: "",
       messages: [],
       typing: [],
-      members:[],
+      members: [],
       formData: {
         message: ""
       }
@@ -198,6 +210,10 @@ export default {
       @apply bg-blue-700;
       right: 0;
       margin-left: auto;
+    }
+
+    .me {
+      @apply text-red-200;
     }
   }
 
