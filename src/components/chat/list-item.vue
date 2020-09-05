@@ -6,10 +6,18 @@
     <div class="font-bold">
       {{ getChannelName(channel) }}
     </div>
-    <div>
-      {{ lastMessage.body }}
+    <div class="flex justify-between">
+      <div class="w-full">
+        {{ lastMessage.body }}
+      </div>
+      <div
+        v-if="channel.newMessages"
+        class="indicator w-4 px-3 rounded-full bg-red-500 text-white font-bold flex justify-center items-center"
+      >
+        {{ channel.newMessages }}
+      </div>
     </div>
-    <div class="text-xs text-blue-400 font-bold"> {{ descriptionText }}</div>
+    <div class="text-xs text-blue-400 font-bold">{{ descriptionText }}</div>
   </div>
 </template>
 
@@ -17,6 +25,10 @@
 export default {
   props: {
     channel: {
+      type: Object,
+      required: true
+    },
+    activeChannel: {
       type: Object,
       required: true
     },
@@ -28,7 +40,8 @@ export default {
   data() {
     return {
       lastMessage: {},
-      typing: []
+      typing: [],
+      newMessages: 0
     };
   },
   created() {
@@ -73,7 +86,7 @@ export default {
       });
     },
 
-    getLastMessage() {
+    getLastMessage(message) {
       this.channel.getMessages(1).then(messages => {
         this.lastMessage = messages.items.length ? messages.items[0] : {};
       });

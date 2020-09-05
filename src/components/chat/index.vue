@@ -25,6 +25,7 @@
               :key="channel.id"
               :channel="channel"
               :user-context="userContext"
+              :active-channel="activeChannel"
               @click="joinChannel(channel)"
             >
             </chat-item>
@@ -134,8 +135,14 @@ export default {
       this.updateChannels();
     },
 
-    updateUnreadMessages() {
-      console.log("update messages");
+    updateUnreadMessages(message) {
+      if (message && this.activeChannel != message.channel) {
+        const index = this.channels.findIndex(
+          channel => channel.sid == message.channel.sid
+        );
+        const count = this.channels[index].newMessages || 0;
+        this.$set(this.channels[index], "newMessages", count+1);
+      }
     },
 
     loadChannelEvents(client) {
