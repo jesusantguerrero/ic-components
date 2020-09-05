@@ -4,6 +4,7 @@
       :show-back-button="true"
       :show-settings="true"
       :title="channel.friendlyName"
+      :description="descriptionText"
       @back="leaveChannel"
       @settings="leaveChannel"
     >
@@ -13,11 +14,7 @@
         {{ message.state.body }}
       </div>
     </div>
-    <input
-      type="text"
-      v-model="formData.message"
-      @keydown.enter="sendMessage"
-    />
+    <input type="text" v-model="formData.message" @keydown="listenTyping" />
   </div>
 </template>
 
@@ -38,6 +35,7 @@ export default {
     return {
       description: "",
       messages: [],
+      typing: [],
       formData: {
         message: ""
       }
@@ -49,6 +47,11 @@ export default {
         this.getMessages();
       },
       immediate: true
+    }
+  },
+  computed: {
+    descriptionText() {
+      return this.typing.length ? "Typing..." : this.description;
     }
   },
   created() {
@@ -67,6 +70,14 @@ export default {
       this.channel.sendMessage(this.formData.message);
       this.formData.message = "";
     },
+    listenTyping(e) {
+      if (e.keyCode === 13) {
+        this.sendMessage();
+      } else {
+        this.channel.typing();
+      }
+    },
+
     getMessages() {
       this.channel.getMessages(30).then(page => {
         this.activeChannelPage = page;
@@ -76,19 +87,20 @@ export default {
         this.channel.on("messageRemoved", this.removeMessage);
       });
 
-      //   channel.on("typingStarted", function(member) {
-      //     member.getUser().then(user => {
-      //       this.typingMembers.add(user.friendlyName || member.identity);
-      //       this.updateTypingIndicator();
-      //     });
-      //   });
+      this.channel.on("typingStarted", member => {
+        console.log("escribiendo");
+        member.getUser().then(user => {
+          this.typing.push(user.friendlyName || member.identity);
+        });
+      });
 
-      //   channel.on("typingEnded", function(member) {
-      // member.getUser().then(user => {
-      //   this.typingMembers.delete(user.friendlyName || member.identity);
-      //   this.updateTypingIndicator();
-      // });
-      //   });
+      this.channel.on("typingEnded", member => {
+        member.getUser().then(user => {
+          this.typing = this.typing.filter(
+            userName => !userName.includes(user.friendlyName || member.identity)
+          );
+        });
+      });
     },
     // chat functions
     removeMessage() {

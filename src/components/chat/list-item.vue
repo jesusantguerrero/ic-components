@@ -9,6 +9,7 @@
     <div>
       {{ lastMessage.body }}
     </div>
+    <div class="text-xs text-blue-400 font-bold"> {{ descriptionText }}</div>
   </div>
 </template>
 
@@ -26,11 +27,17 @@ export default {
   },
   data() {
     return {
-      lastMessage: {}
+      lastMessage: {},
+      typing: []
     };
   },
   created() {
     this.listenChannel();
+  },
+  computed: {
+    descriptionText() {
+      return this.typing.length ? "Typing..." : "";
+    }
   },
   methods: {
     getChannelName(channel) {
@@ -51,6 +58,19 @@ export default {
     listenChannel() {
       this.getLastMessage();
       this.channel.on("messageAdded", this.getLastMessage);
+      this.channel.on("typingStarted", member => {
+        member.getUser().then(user => {
+          this.typing.push(user.friendlyName || member.identity);
+        });
+      });
+
+      this.channel.on("typingEnded", member => {
+        member.getUser().then(user => {
+          this.typing = this.typing.filter(
+            userName => !userName.includes(user.friendlyName || member.identity)
+          );
+        });
+      });
     },
 
     getLastMessage() {
