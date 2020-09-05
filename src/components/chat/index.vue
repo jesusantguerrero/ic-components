@@ -44,6 +44,7 @@
       </div>
       <chat-messager
         :channel="activeChannel"
+        :user-context="userContext"
         v-if="activeChannel"
         @left="leaveChannel"
       >
@@ -74,13 +75,20 @@ export default {
       messages: [],
       contacts: [
         {
-          email: "freesgen@mctekk.com"
+          email: "freesgen@mctekk.com",
+          name: "Freesgen"
         },
         {
-          email: "jesusant@mctekk.com"
+          email: "jesusant@mctekk.com",
+          name: "Jesus McTekk"
         },
         {
-          email: "jesusant.guerrero@gmail.com"
+          email: "jesusant.guerrero@gmail.com",
+          name: "Jesus Guerrero"
+        },
+        {
+          email: "max@mctekk.com",
+          name: "Max Castro"
         }
       ],
       activeChannel: null,
@@ -124,7 +132,7 @@ export default {
         .then(page => {
           return page.items.map(item => item);
         });
-
+      // subscribed.forEach(channel => channel.delete());
       this.channels = subscribed;
       console.log("update channels");
     },
@@ -141,7 +149,7 @@ export default {
           channel => channel.sid == message.channel.sid
         );
         const count = this.channels[index].newMessages || 0;
-        this.$set(this.channels[index], "newMessages", count+1);
+        this.$set(this.channels[index], "newMessages", count + 1);
       }
     },
 
@@ -183,7 +191,11 @@ export default {
       } else {
         this.client
           .createChannel({
-            friendlyName: contact.email,
+            attributes: {
+              receiver: contact.email,
+              receiverName: contact.name
+            },
+            friendlyName: contact.name,
             isPrivate: true,
             uniqueName: `${this.userContext.identity}-${contact.email}`
           })
@@ -203,14 +215,6 @@ export default {
       }
     },
 
-    removeActiveChannelListeners() {
-      if (this.activeChannel) {
-        this.activeChannel.removeListener("messageAdded", this.addMessage);
-        this.activeChannel.removeListener("messageRemoved", this.removeMessage);
-        this.activeChannel.removeListener("messageUpdated", this.updateMessage);
-        this.activeChannel.removeListener("memberUpdated", this.updateMember);
-      }
-    },
 
     updateMembers() {
       console.log("updated");
@@ -225,7 +229,6 @@ export default {
     },
 
     setActiveChannel(channel) {
-      this.removeActiveChannelListeners();
       this.activeChannel = channel;
     }
   }

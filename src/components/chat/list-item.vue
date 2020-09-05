@@ -4,7 +4,7 @@
     @click.prevent="$emit('click')"
   >
     <div class="font-bold">
-      {{ getChannelName(channel) }}
+      {{ channelName }}
     </div>
     <div class="flex justify-between">
       <div class="w-full">
@@ -41,6 +41,7 @@ export default {
     return {
       lastMessage: {},
       typing: [],
+      members: [],
       newMessages: 0
     };
   },
@@ -50,26 +51,24 @@ export default {
   computed: {
     descriptionText() {
       return this.typing.length ? "Typing..." : "";
+    },
+    channelName() {
+      console.log(this.channel.attributes.receiver);
+      return this.userContext.identity == this.channel.attributes.receiver
+        ? this.channel.createdBy
+        : this.channel.friendlyName;
     }
   },
   methods: {
-    getChannelName(channel) {
-      let memberName = channel.friendlyName;
-      if (channel.members.size == 1) {
-        channel.members.forEach(member => {
-          if (
-            this.userContext &&
-            this.userContext.identity != member.state.identity
-          ) {
-            memberName = member.state.identity;
-          }
-        });
-      }
-      return memberName;
+    getChannelName() {
+      this.channel.getMembers().then(members => {
+        this.members = members;
+      });
     },
 
     listenChannel() {
       this.getLastMessage();
+      this.getChannelName();
       this.channel.on("messageAdded", this.getLastMessage);
       this.channel.on("typingStarted", member => {
         member.getUser().then(user => {
@@ -86,7 +85,7 @@ export default {
       });
     },
 
-    getLastMessage(message) {
+    getLastMessage() {
       this.channel.getMessages(1).then(messages => {
         this.lastMessage = messages.items.length ? messages.items[0] : {};
       });
