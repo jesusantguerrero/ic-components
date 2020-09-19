@@ -107,7 +107,6 @@ export const useWeekPager = props => {
     // state
     selectedDay,
     selectedWeek,
-    firstDayOfWeek,
 
     // methods
     prevWeek,
