@@ -10,7 +10,7 @@
           <i :class="leftIcon"></i>
         </div>
 
-        <div class="py-5 px-5 text-left overflow-hidden">
+        <div class="py-5 flex items-center text-left overflow-hidden">
           <h4 class="text-2xl">
             <span>
               {{ title }}

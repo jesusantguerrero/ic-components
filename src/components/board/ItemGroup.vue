@@ -107,29 +107,29 @@ import ItemGroupCell from "./ItemGroupCell";
 
 export default {
   components: {
-    ItemGroupCell,
+    ItemGroupCell
   },
   props: {
     createMode: {
-      type: Boolean,
+      type: Boolean
     },
     stage: {
-      type: Object,
+      type: Object
     },
     items: {
-      type: Array,
-    },
+      type: Array
+    }
   },
   data() {
     return {
       newItem: {},
-      isExpanded: true,
+      isExpanded: true
     };
   },
   methods: {
     getBg(field, value) {
       if (value && field.rules && field.rules.bg) {
-        const bg = field.rules.bg.find((rule) => {
+        const bg = field.rules.bg.find(rule => {
           return value.toLowerCase() == rule.value.toLowerCase();
         });
         return bg ? "bg-" + bg.result + "-300" : "";
@@ -140,16 +140,16 @@ export default {
       this.isExpanded = !this.isExpanded;
     },
     addItem() {
-        this.$emit("saved", {...this.newItem});
-        this.newItem = {};
-    },
-  },
+      this.$emit("saved", { ...this.newItem });
+      this.newItem = {};
+    }
+  }
 };
 </script>
 
 <style lang="scss">
 .header-cell {
-  @apply flex items-center pl-2 ;
+  @apply flex items-center pl-2;
   height: 34px;
   .toolbar-buttons {
     display: none;

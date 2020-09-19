@@ -6,49 +6,31 @@
       @logged="createClient"
     ></chat-Login>
 
-    <div class="home-container" v-else>
-      <div class="channels bg-gray-200 h-screen" v-if="!activeChannel">
-        <div>
-          <chat-header
-            :show-back-button="true"
-            :show-settings="!addNewChat"
-            :left-icon="!addNewChat ? 'fa fa-menu' : 'fa fa-chevron-left'"
-            right-icon="fa fa-plus"
-            :title="headerTitle"
-            @back="addNewChat = !addNewChat"
-            @settings="addNewChat = !addNewChat"
-          >
-          </chat-header>
-          <template v-if="!addNewChat">
-            <chat-item
-              v-for="channel in channels"
-              :key="channel.id"
-              :channel="channel"
-              :user-context="userContext"
-              :active-channel="activeChannel"
-              @click="joinChannel(channel)"
-            >
-            </chat-item>
-          </template>
-          <template v-else>
-            <div
-              v-for="contact in contacts"
-              :key="contact.email"
-              @click="createOrJoin(contact)"
-              class="border-b-2 border-gray-400 mx-5 pl-10 px-2 py-5 text-left cursor-pointer hover:bg-gray-400"
-            >
-              {{ contact.email }}
-            </div>
-          </template>
-        </div>
-      </div>
-      <chat-messager
-        :channel="activeChannel"
-        :user-context="userContext"
-        v-if="activeChannel"
-        @left="leaveChannel"
+    <div class="home-container flex" v-else>
+      <div
+        class="chat-side__container h-screen border-r-2 border-gray-700 w-1/3"
+        v-if="!activeChannel || display == 'full'"
       >
-      </chat-messager>
+        <chat-side
+          :user-context="userContext"
+          :channels="channels"
+          :active-channel="activeChannel"
+          @join-channel="joinChannel"
+          @create-or-join="createOrJoin"
+        >
+        </chat-side>
+      </div>
+
+      <div v-if="activeChannel || display == 'full'" class="w-2/3">
+        <chat-messager
+          :active-channel="activeChannel"
+          :user-context="userContext"
+          v-if="activeChannel"
+          @left="leaveChannel"
+          @read="$emit('read', $event)"
+        >
+        </chat-messager>
+      </div>
     </div>
   </div>
 </template>
@@ -57,20 +39,23 @@
 import * as Twilio from "twilio-chat";
 import ChatLogin from "./login";
 import ChatMessager from "./messager";
-import ChatHeader from "./header";
-import ChatItem from "./list-item";
+import ChatSide from "./side";
 
 export default {
   components: {
     ChatLogin,
     ChatMessager,
-    ChatHeader,
-    ChatItem
+    ChatSide
+  },
+  props: {
+    display: {
+      type: String,
+      default: "mobile"
+    }
   },
   data() {
     return {
       client: null,
-      addNewChat: false,
       channels: [],
       messages: [],
       contacts: [
@@ -99,9 +84,6 @@ export default {
   computed: {
     isLoggedIn() {
       return this.userContext.identity;
-    },
-    headerTitle() {
-      return this.addNewChat ? "Contacts" : "Dealer One";
     }
   },
   methods: {
@@ -116,70 +98,6 @@ export default {
       });
       this.updateChannels();
       this.loadChannelEvents(client);
-    },
-
-    onTokenAboutToExpire() {
-      console.log("about to expire");
-    },
-
-    async updateChannels(channel) {
-      if (channel && !channel.status == "joined") {
-        channel.join();
-      }
-
-      const subscribed = await this.client
-        .getSubscribedChannels()
-        .then(page => {
-          return page.items.map(item => item);
-        });
-      // subscribed.forEach(channel => channel.delete());
-      this.channels = subscribed;
-      console.log("update channels");
-    },
-
-    leaveChannel(channel) {
-      channel.removeListener("messageAdded", this.updateUnreadMessages);
-      this.activeChannel = null;
-      this.updateChannels();
-    },
-
-    updateUnreadMessages(message) {
-      if (message && this.activeChannel != message.channel) {
-        const index = this.channels.findIndex(
-          channel => channel.sid == message.channel.sid
-        );
-        const count = this.channels[index].newMessages || 0;
-        this.$set(this.channels[index], "newMessages", count + 1);
-      }
-    },
-
-    loadChannelEvents(client) {
-      client.on("channelJoined", channel => {
-        channel.on("messageAdded", () => {
-          this.updateChannels();
-          this.updateUnreadMessages();
-        });
-        this.updateChannels();
-      });
-
-      client.on("channelInvited", this.updateChannels);
-      client.on("channelAdded", this.updateChannels);
-      client.on("channelUpdated", this.updateChannels);
-      client.on("channelLeft", this.leaveChannel);
-      client.on("channelRemoved", this.leaveChannel);
-    },
-
-    // chat functions
-    removeMessage() {
-      console.log("removed");
-    },
-
-    addMessage(message) {
-      this.messages.push(message);
-    },
-
-    updateMessage() {
-      console.log("removed");
     },
 
     async createOrJoin(contact) {
@@ -215,17 +133,42 @@ export default {
       }
     },
 
-
-    updateMembers() {
-      console.log("updated");
+    onTokenAboutToExpire() {
+      console.log("about to expire");
     },
 
-    updateMember() {
-      console.log("updated");
+    async updateChannels(channel) {
+      if (channel && !channel.status == "joined") {
+        channel.join();
+      }
+
+      const subscribed = await this.client
+        .getSubscribedChannels()
+        .then(page => {
+          return page.items.map(item => item);
+        });
+      this.channels = subscribed;
+      console.log("update channels");
     },
 
-    sendMessage(message) {
-      this.activeChannel.sendMessage(message);
+    leaveChannel() {
+      this.activeChannel = null;
+      this.updateChannels();
+    },
+
+    loadChannelEvents(client) {
+      client.on("channelJoined", channel => {
+        channel.on("messageAdded", () => {
+          this.updateChannels();
+        });
+        this.updateChannels();
+      });
+
+      client.on("channelInvited", this.updateChannels);
+      client.on("channelAdded", this.updateChannels);
+      client.on("channelUpdated", this.updateChannels);
+      client.on("channelLeft", this.leaveChannel);
+      client.on("channelRemoved", this.leaveChannel);
     },
 
     setActiveChannel(channel) {
@@ -234,5 +177,3 @@ export default {
   }
 };
 </script>
-
-<style></style>

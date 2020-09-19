@@ -17,7 +17,7 @@
           v-for="option in field.options"
           :key="option.name"
         >
-          {{option.label || option.name }}
+          {{ option.label || option.name }}
         </option>
       </select>
       <input
@@ -37,34 +37,34 @@
 export default {
   props: {
     fieldName: {
-      type: String,
+      type: String
     },
     field: {
       type: Object,
       default() {
         return {};
-      },
+      }
     },
     fieldType: {
       type: String,
-      default: "text",
+      default: "text"
     },
     item: {
-      type: Object,
+      type: Object
     },
     index: {
-      type: Number,
+      type: Number
     },
     isNew: {
-      type: Boolean,
-    },
+      type: Boolean
+    }
   },
   watch: {
     isNew: {
       handler(isNew) {
         this.isEditMode = isNew;
       },
-      immediate: true,
+      immediate: true
     },
     item: {
       handler(item) {
@@ -73,27 +73,27 @@ export default {
         }
       },
       deep: true,
-      immediate: true,
-    },
+      immediate: true
+    }
   },
   data() {
     return {
       value: "",
-      isEditMode: false,
+      isEditMode: false
     };
   },
   computed: {
     displayValue() {
       if (this.field.type == "select") {
-        const option = this.field.options.find((option) => {
+        const option = this.field.options.find(option => {
           return option.name == this.value;
-				});
-				
-				return option ? option.label || option.name :  this.item[this.fieldName];
+        });
+
+        return option ? option.label || option.name : this.item[this.fieldName];
       } else {
         return this.item[this.fieldName];
       }
-    },
+    }
   },
   methods: {
     toggleEditMode() {
@@ -104,8 +104,8 @@ export default {
       if (!this.isNew) {
         this.toggleEditMode();
       }
-    },
-  },
+    }
+  }
 };
 </script>
 

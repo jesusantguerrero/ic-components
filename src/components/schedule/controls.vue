@@ -1,21 +1,34 @@
 <template>
-  <div class="mt-5">
+  <div class="mt-5 controls">
+    <div class="month-name pl-8 font-bold capitalize">
+      {{ getMonthName(selectedDay) }}
+    </div>
     <div class="controls-container">
-      <div class="day-controls" @click.prevent="prevWeek()">
-        <i class="fa fa-chevron-left"></i>
+      <div class="w-full flex justify-start">
+        <div class="day-controls" @click.prevent="prevWeek()">
+          <i class="fa fa-chevron-left"></i>
+        </div>
       </div>
+
       <div
-        class="day-item"
-        :class="{ 'selected-day': isSelectedDate(day) }"
         v-for="day in week"
         :key="`item-${day}`"
-        @click="selectedDay = day"
+        class="w-full flex justify-center"
       >
-        <span>{{ getDayName(day) }}</span> <br />
-        <span>{{ getDateLabel(day) }}</span>
+        <div
+          class="day-item"
+          :class="{ 'selected-day': isSelectedDate(day) }"
+          @click="selectedDay = day"
+        >
+          <span class="text-xl font-bold block">{{ getDateLabel(day) }}</span>
+          <span class="capitalize">{{ getDayName(day) }}</span> <br />
+        </div>
       </div>
-      <div class="day-controls" @click.prevent="nextWeek()">
-        <i class="fa fa-chevron-right"></i>
+
+      <div class="w-full flex justify-end">
+        <div class="day-controls" @click.prevent="nextWeek()">
+          <i class="fa fa-chevron-right"></i>
+        </div>
       </div>
     </div>
   </div>
@@ -96,12 +109,17 @@ export default {
       return this.getISODate(this.selectedDay) == this.getISODate(date);
     },
     getDayName(date) {
-      return format(date, "iiii", {
+      return format(date, "iii", {
+        locale: es
+      });
+    },
+    getMonthName(date) {
+      return format(date, "MMM, yyyy", {
         locale: es
       });
     },
     getDateLabel(date) {
-      return format(date, "dd MMMM", {
+      return format(date, "dd", {
         locale: es
       });
     }
@@ -110,29 +128,43 @@ export default {
 </script>
 
 <style lang="scss">
+$primary-color: var(--primary-color);
+
+.controls {
+  @apply text-left bg-white shadow-lg mb-1 p-2 border-gray-100 border-2;
+  border-radius: 12px;
+}
+
 .controls-container {
-  @apply grid grid-cols-3 text-left;
+  @apply grid grid-cols-3 pb-3;
   user-select: none;
 }
 
 .day-item,
 .day-controls {
-  @apply text-center capitalize bg-blue-500 text-white py-2 border-blue-500 border-2 cursor-pointer;
+  @apply text-center capitalize text-gray-600 py-2  cursor-pointer w-20;
   transition: all ease 0.3s;
+  border-radius: 0.8rem;
   display: none;
 
   &:hover {
-    @apply bg-blue-700;
+    @apply text-white;
+    background: var(--primary-color);
   }
 }
 
 .day-controls {
-  @apply flex justify-center items-center bg-blue-700 text-white;
+  @apply flex justify-center items-center text-gray-700;
+  &:hover {
+    @apply bg-gray-400 text-gray-700;
+  }
 }
 
 .selected-day {
-  @apply border-green-200 bg-blue-700 visible;
+  @apply visible text-white shadow-lg;
   display: block;
+  background: var(--primary-color);
+  box-shadow: 4px 4px 6px var(--primary-color-5);
 }
 
 @media (min-width: 768px) {

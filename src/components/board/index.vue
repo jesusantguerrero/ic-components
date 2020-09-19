@@ -36,20 +36,17 @@
       class="mt-4"
     >
     </item-group>
-    <ic-schedule endpoint="http://mahanahim.test/wp-json/ic-schedule/v1/programs"></ic-schedule>
   </div>
 </template>
 
 <script>
 import ItemGroup from "./ItemGroup";
-import IcSchedule from "@/components/schedule/view";
 import { defineComponent } from "vue";
 
 export default defineComponent({
   name: "HelloWorld",
   components: {
-    ItemGroup,
-    IcSchedule
+    ItemGroup
   },
   props: {
     msg: String

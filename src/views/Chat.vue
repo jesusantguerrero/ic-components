@@ -1,6 +1,6 @@
 <template>
   <div class="about">
-    <chat></chat>
+    <chat display="full"></chat>
   </div>
 </template>
 
@@ -9,7 +9,7 @@ import { defineComponent } from "vue";
 import Chat from "@/components/chat/index.vue"; // @ is an alias to /src
 
 export default defineComponent({
-  name: "Abount",
+  name: "Chat",
   components: {
     Chat
   }
