@@ -11,7 +11,7 @@
       </div>
 
       <div
-        v-for="day in week"
+        v-for="day in selectedWeek"
         :key="`item-${day}`"
         class="w-full flex justify-center"
       >
@@ -41,64 +41,131 @@ import { es } from "date-fns/locale";
 export default {
   name: "Controls",
   props: {
-    value: {
+    day: {
       type: Date
+    },
+    week: {
+      type: Array
+    },
+    nextMode: {
+      type: String,
+      default: "day"
     }
   },
   data() {
     return {
-      week: [],
-      today: new Date(),
+      selectedWeek: [],
       selectedDay: new Date(),
+      today: new Date(),
       firstDayOfWeek: 0
     };
   },
   watch: {
-    selectedDay: {
+    nextMode: {
       handler() {
-        this.$emit("input", this.selectedDay);
+        this.checkWeek();
       },
       immediate: true
     },
-    value: {
+    selectedDay: {
+      handler() {
+        this.$emit("update:day", this.selectedDay);
+      },
+      immediate: true
+    },
+    selectedWeek: {
+      handler() {
+        this.$emit("update:week", this.selectedWeek);
+      },
+      immediate: true
+    },
+    day: {
       handler(newDate) {
         this.selectedDay = newDate || this.selectedDay;
+      },
+      immediate: true
+    },
+    week: {
+      handler(newWeek) {
+        this.selectedWeek = newWeek || this.selectedWeek;
       },
       immediate: true
     }
   },
   created() {
-    this.week = this.getWeek(new Date());
+    this.checkWeek();
   },
   methods: {
+    checkWeek() {
+      this.selectedWeek = this.getWeek(new Date());
+    },
+
     getWeek(date) {
+      const weekMethod =
+        this.nextMode != "week" ? this.getWeekDays : this.getCalendarWeek;
+      return weekMethod(date);
+    },
+
+    getWeekDays(date) {
       const firstDate = new Date(date.setDate(date.getDate() - 4));
-      const week = [];
+      const selectedWeek = [];
       for (let i = 0; i < 7; i++) {
         firstDate.setDate(firstDate.getDate() + 1);
+        selectedWeek.push(new Date(firstDate));
+      }
+      return selectedWeek;
+    },
+
+    getCalendarWeek(date) {
+      const firstDate = new Date(
+        date.setDate(date.getDate() - date.getDay() + this.firstDayOfWeek)
+      );
+      const week = [new Date(firstDate)];
+      while (
+        firstDate.setDate(firstDate.getDate() + 1) &&
+        firstDate.getDay() !== this.firstDayOfWeek
+      ) {
         week.push(new Date(firstDate));
       }
       return week;
     },
     isSelectedDayInWeek() {
-      this.selectedDay = this.week[3];
+      if (this.nextMode != "week") {
+        this.selectedDay = this.selectedWeek[3];
+      } else {
+        const isSelectedDayInWeek = this.selectedWeek
+          .filter(date => this.getISODate(date))
+          .includes(this.getISODate(this.selectedDay));
+        if (!isSelectedDayInWeek) {
+          this.selectedDay = this.selectedWeek[0];
+        }
+      }
     },
     gotoToday() {
       this.selectedDay = new Date();
       this.todayMode = !this.todayMode;
     },
     nextWeek() {
-      this.week = this.getWeek(
-        new Date(this.week[3].setDate(this.week[3].getDate() + 1))
-      );
+      let date = new Date(this.week[6].setDate(this.week[6].getDate() + 1));
+      if (this.nextMode != "week") {
+        date = new Date(
+          this.selectedWeek[3].setDate(this.selectedWeek[3].getDate() + 1)
+        );
+      }
+      this.selectedWeek = this.getWeek(date);
       this.isSelectedDayInWeek();
     },
     prevWeek() {
-      this.week = this.getWeek(
-        new Date(this.week[3].setDate(this.week[3].getDate() - 1))
-      );
+      let date = new Date(this.week[0].setDate(this.week[0].getDate() - 1));
+      if (this.nextMode != "week") {
+        date = new Date(
+          this.selectedWeek[3].setDate(this.selectedWeek[3].getDate() - 1)
+        );
+      }
+      this.selectedWeek = this.getWeek(date);
       this.isSelectedDayInWeek();
     },
+
     getISODate(date) {
       return date.toISOString().slice(0, 10);
     },
