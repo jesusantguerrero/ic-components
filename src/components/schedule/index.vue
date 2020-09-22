@@ -20,7 +20,7 @@
         v-model:day="selectedDay"
         v-model:week="selectedWeek"
         viewMode="day"
-        nextMode="day"
+        nextMode="month"
         @input="selectedDay = $event"
       ></controls>
 

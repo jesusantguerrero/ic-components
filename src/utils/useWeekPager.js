@@ -1,3 +1,4 @@
+import { getMonth, isLastDayOfMonth } from "date-fns";
 import { watch, ref } from "vue";
 
 export const useWeekPager = props => {
@@ -58,9 +59,26 @@ export const useWeekPager = props => {
     return week;
   };
 
+  const getCalendarMonth = date => {
+    const firstDate = new Date(
+      date.setDate(date.getDate() - (date.getDate() - 1))
+    );
+    const month = [new Date(firstDate)];
+    while (!isLastDayOfMonth(firstDate)) {
+      firstDate.setDate(firstDate.getDate() + 1);
+      month.push(new Date(firstDate));
+    }
+    return month;
+  };
+
   const getWeek = date => {
-    const weekMethod = nextMode.value != "week" ? getWeekDays : getCalendarWeek;
-    return weekMethod(date);
+    const controls = {
+      day: getWeekDays,
+      week: getCalendarWeek,
+      month: getCalendarMonth
+    };
+    const mode = nextMode.value || "week";
+    return controls[mode](date);
   };
 
   const checkWeek = () => {
@@ -76,13 +94,15 @@ export const useWeekPager = props => {
   };
 
   // controls
-  const nextWeek = () => {
-    const dayIndex = nextMode.value != "week" ? 3 : 6;
+  const next = () => {
+    const dayIndex =
+      nextMode.value == "day" ? 3 : selectedWeek.value.length - 1;
     const date = new Date(
       selectedWeek.value[dayIndex].setDate(
         selectedWeek.value[dayIndex].getDate() + 1
       )
     );
+
     selectedWeek.value = getWeek(date);
     selectedDay.value = setSelectedDayInWeek(
       selectedDay.value,
@@ -91,8 +111,8 @@ export const useWeekPager = props => {
     );
   };
 
-  const prevWeek = () => {
-    const dayIndex = nextMode.value != "week" ? 3 : 0;
+  const previous = () => {
+    const dayIndex = nextMode.value == "day" ? 3 : 0;
     const date = new Date(
       selectedWeek.value[dayIndex].setDate(
         selectedWeek.value[dayIndex].getDate() - 1
@@ -117,8 +137,8 @@ export const useWeekPager = props => {
     controls: {
       setWeek,
       setDay,
-      previous: prevWeek,
-      next: nextWeek
+      previous,
+      next
     }
   };
 };

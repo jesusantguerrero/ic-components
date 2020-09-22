@@ -1,31 +1,63 @@
 <template>
   <div class="mt-5 controls">
-    <div class="month-name pl-8 font-bold capitalize">
-      {{ getMonthName(selectedDay) }}
+    <div class="month-name pl-8 font-bold capitalize flex justify-between h-12">
+      <span>
+        {{ getMonthName(selectedDay) }}
+      </span>
+
+      <div v-if="isMonthMode" class="flex">
+        <div class="w-full flex justify-start">
+          <div class="day-controls" @click.prevent="controls.previous()">
+            <i class="fa fa-chevron-left"></i>
+          </div>
+        </div>
+
+        <div class="w-full flex justify-end" v-if="isMonthMode">
+          <div class="day-controls" @click.prevent="controls.next()">
+            <i class="fa fa-chevron-right"></i>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="controls-container">
-      <div class="w-full flex justify-start">
+
+    <div class="controls-container" :class="{ month: isMonthMode }">
+      <div class="w-full flex justify-start" v-if="!isMonthMode">
         <div class="day-controls" @click.prevent="controls.previous()">
           <i class="fa fa-chevron-left"></i>
         </div>
       </div>
 
       <div
-        v-for="day in selectedWeek"
+        v-for="day in weekDays"
+        :key="`item-${day}`"
+        class="w-full flex justify-center"
+      >
+        <div class="day-item" @click="selectedDay = day">
+          <span class="text-xl font-bold block">{{ day }}</span>
+        </div>
+      </div>
+
+      <div
+        v-for="day in displayWeek"
         :key="`item-${day}`"
         class="w-full flex justify-center"
       >
         <div
           class="day-item"
-          :class="{ 'selected-day': isSelectedDate(day) }"
+          :class="{ 'selected-day': day && isSelectedDate(day) }"
           @click="selectedDay = day"
         >
-          <span class="text-xl font-bold block">{{ getDateLabel(day) }}</span>
-          <span class="capitalize">{{ getDayName(day) }}</span> <br />
+          <span class="text-xl font-bold block">{{
+            day && getDateLabel(day)
+          }}</span>
+          <span class="capitalize" v-if="!isMonthMode">{{
+            day && getDayName(day)
+          }}</span>
+          <br />
         </div>
       </div>
 
-      <div class="w-full flex justify-end">
+      <div class="w-full flex justify-end" v-if="!isMonthMode">
         <div class="day-controls" @click.prevent="controls.next()">
           <i class="fa fa-chevron-right"></i>
         </div>
@@ -38,7 +70,7 @@
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useWeekPager } from "@/utils/useWeekPager.js";
-import { watch, toRefs } from "vue";
+import { watch, toRefs, ref, computed } from "vue";
 
 export default {
   name: "Controls",
@@ -60,11 +92,23 @@ export default {
       nextMode: nextMode.value
     });
 
+    const weekDays = ref(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]);
+    const isMonthMode = computed(() => nextMode.value == "month");
+
     const emitWeek = value => {
       emit("update:week", value);
     };
     watch(week, controls.setWeek, { immediate: true });
     watch(selectedWeek, emitWeek, { immediate: true });
+    const displayWeek = computed(() => {
+      const dw = [];
+      const daysBefore = selectedWeek.value[0].getDay();
+      for (let index = 0; index < daysBefore; index++) {
+        dw.push("");
+      }
+      dw.push(...selectedWeek.value);
+      return isMonthMode.value ? dw : selectedWeek.value;
+    });
 
     const emitDay = value => {
       emit("update:day", value);
@@ -106,6 +150,9 @@ export default {
     return {
       selectedWeek,
       selectedDay,
+      weekDays,
+      displayWeek,
+      isMonthMode,
 
       // methods
       controls,
@@ -165,6 +212,10 @@ $primary-color: var(--primary-color);
   .controls-container {
     @apply grid-cols-9;
     user-select: none;
+
+    &.month {
+      @apply grid-cols-7;
+    }
   }
 
   .day-item {
