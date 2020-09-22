@@ -5,7 +5,7 @@
     </div>
     <div class="controls-container">
       <div class="w-full flex justify-start">
-        <div class="day-controls" @click.prevent="prevWeek()">
+        <div class="day-controls" @click.prevent="controls.previous()">
           <i class="fa fa-chevron-left"></i>
         </div>
       </div>
@@ -26,7 +26,7 @@
       </div>
 
       <div class="w-full flex justify-end">
-        <div class="day-controls" @click.prevent="nextWeek()">
+        <div class="day-controls" @click.prevent="controls.next()">
           <i class="fa fa-chevron-right"></i>
         </div>
       </div>
@@ -37,6 +37,8 @@
 <script>
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useWeekPager } from "@/utils/useWeekPager.js";
+import { watch, toRefs } from "vue";
 
 export default {
   name: "Controls",
@@ -52,144 +54,69 @@ export default {
       default: "day"
     }
   },
-  data() {
-    return {
-      selectedWeek: [],
-      selectedDay: new Date(),
-      today: new Date(),
-      firstDayOfWeek: 0
+  setup(props, { emit }) {
+    const { day, week, nextMode } = toRefs(props);
+    const { controls, selectedWeek, selectedDay } = useWeekPager({
+      nextMode: nextMode.value
+    });
+
+    const emitWeek = value => {
+      emit("update:week", value);
     };
-  },
-  watch: {
-    nextMode: {
-      handler() {
-        this.checkWeek();
-      },
-      immediate: true
-    },
-    selectedDay: {
-      handler() {
-        this.$emit("update:day", this.selectedDay);
-      },
-      immediate: true
-    },
-    selectedWeek: {
-      handler() {
-        this.$emit("update:week", this.selectedWeek);
-      },
-      immediate: true
-    },
-    day: {
-      handler(newDate) {
-        this.selectedDay = newDate || this.selectedDay;
-      },
-      immediate: true
-    },
-    week: {
-      handler(newWeek) {
-        this.selectedWeek = newWeek || this.selectedWeek;
-      },
-      immediate: true
-    }
-  },
-  created() {
-    this.checkWeek();
-  },
-  methods: {
-    checkWeek() {
-      this.selectedWeek = this.getWeek(new Date());
-    },
+    watch(week, controls.setWeek, { immediate: true });
+    watch(selectedWeek, emitWeek, { immediate: true });
 
-    getWeek(date) {
-      const weekMethod =
-        this.nextMode != "week" ? this.getWeekDays : this.getCalendarWeek;
-      return weekMethod(date);
-    },
+    const emitDay = value => {
+      emit("update:day", value);
+    };
+    watch(day, controls.setDay, { immediate: true });
+    watch(selectedDay, emitDay, { immediate: true });
 
-    getWeekDays(date) {
-      const firstDate = new Date(date.setDate(date.getDate() - 4));
-      const selectedWeek = [];
-      for (let i = 0; i < 7; i++) {
-        firstDate.setDate(firstDate.getDate() + 1);
-        selectedWeek.push(new Date(firstDate));
-      }
-      return selectedWeek;
-    },
+    // viewHelpers
+    const getISODate = date => {
+      return date.toISOString ? date.toISOString().slice(0, 10) : "";
+    };
 
-    getCalendarWeek(date) {
-      const firstDate = new Date(
-        date.setDate(date.getDate() - date.getDay() + this.firstDayOfWeek)
-      );
-      const week = [new Date(firstDate)];
-      while (
-        firstDate.setDate(firstDate.getDate() + 1) &&
-        firstDate.getDay() !== this.firstDayOfWeek
-      ) {
-        week.push(new Date(firstDate));
-      }
-      return week;
-    },
-    isSelectedDayInWeek() {
-      if (this.nextMode != "week") {
-        this.selectedDay = this.selectedWeek[3];
-      } else {
-        const isSelectedDayInWeek = this.selectedWeek
-          .filter(date => this.getISODate(date))
-          .includes(this.getISODate(this.selectedDay));
-        if (!isSelectedDayInWeek) {
-          this.selectedDay = this.selectedWeek[0];
-        }
-      }
-    },
-    gotoToday() {
-      this.selectedDay = new Date();
-      this.todayMode = !this.todayMode;
-    },
-    nextWeek() {
-      let date = new Date(this.week[6].setDate(this.week[6].getDate() + 1));
-      if (this.nextMode != "week") {
-        date = new Date(
-          this.selectedWeek[3].setDate(this.selectedWeek[3].getDate() + 1)
-        );
-      }
-      this.selectedWeek = this.getWeek(date);
-      this.isSelectedDayInWeek();
-    },
-    prevWeek() {
-      let date = new Date(this.week[0].setDate(this.week[0].getDate() - 1));
-      if (this.nextMode != "week") {
-        date = new Date(
-          this.selectedWeek[3].setDate(this.selectedWeek[3].getDate() - 1)
-        );
-      }
-      this.selectedWeek = this.getWeek(date);
-      this.isSelectedDayInWeek();
-    },
+    const isToday = date => {
+      return getISODate(new Date()) == getISODate(date);
+    };
 
-    getISODate(date) {
-      return date.toISOString().slice(0, 10);
-    },
-    isToday(date) {
-      return this.getISODate(new Date()) == this.getISODate(date);
-    },
-    isSelectedDate(date) {
-      return this.getISODate(this.selectedDay) == this.getISODate(date);
-    },
-    getDayName(date) {
+    const isSelectedDate = date => {
+      return getISODate(selectedDay.value) == getISODate(date);
+    };
+
+    const getDayName = date => {
       return format(date, "iii", {
         locale: es
       });
-    },
-    getMonthName(date) {
+    };
+
+    const getMonthName = date => {
       return format(date, "MMM, yyyy", {
         locale: es
       });
-    },
-    getDateLabel(date) {
+    };
+
+    const getDateLabel = date => {
       return format(date, "dd", {
         locale: es
       });
-    }
+    };
+
+    return {
+      selectedWeek,
+      selectedDay,
+
+      // methods
+      controls,
+      // ui helpers
+      getISODate,
+      isToday,
+      isSelectedDate,
+      getDayName,
+      getMonthName,
+      getDateLabel
+    };
   }
 };
 </script>

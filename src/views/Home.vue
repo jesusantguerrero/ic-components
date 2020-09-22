@@ -27,16 +27,6 @@
       >
       </ic-schedule-view>
     </div>
-
-    <div style="width: 1200px" class="mt-5">
-      <ic-schedule-view
-        :allow-update="true"
-        :allow-add="true"
-        :allow-delete="true"
-        endpoint="http://mahanahim.test/wp-json/ic-schedule/v1/programs"
-      >
-      </ic-schedule-view>
-    </div>
   </div>
 </template>
 

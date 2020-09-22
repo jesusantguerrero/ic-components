@@ -20,9 +20,10 @@
         v-model:day="selectedDay"
         v-model:week="selectedWeek"
         viewMode="day"
-        nextMode="week"
+        nextMode="day"
         @input="selectedDay = $event"
       ></controls>
+
       <grid
         class="mx-8"
         :selected-date="selectedDay"
@@ -36,21 +37,6 @@
       >
       </grid>
     </div>
-
-    <button
-        class="text-blue-600 rounded-lg w-56 p-3 border-2 border-gray-400"
-        @click="nextWeek()"
-      >
-        Next
-      </button>
-    {{ selectedWeekL }}
-
-    <button
-        class="text-blue-600 rounded-lg w-56 p-3 border-2 border-gray-400"
-        @click="prevWeek()"
-      >
-        Prev
-      </button>
   </div>
 </template>
 
@@ -60,9 +46,6 @@ import Controls from "./controls";
 import Grid from "./grid";
 import axios from "axios";
 import { defineComponent } from "vue";
-import { useWeekPager } from "./useWeekPager.js";
-
-const { nextWeek, prevWeek, selectedWeek } = useWeekPager({ nextMode: "week" });
 
 export default defineComponent({
   name: "Schedule",
@@ -90,44 +73,15 @@ export default defineComponent({
   },
   data() {
     return {
-      msg: "Horario Mahanahim",
       isFormOpen: false,
-      formData: {},
-      currentTime: new Date(),
       selectedDay: new Date(),
-      selectedWeek: [],
-      horaActiva: 0,
-      modoManual: false,
-      mostrarTodos: false,
+      formData: {},
       schedule: []
     };
-  },
-  created() {
-    setInterval(() => {
-      this.currentTime = new Date();
-    }, 1000);
   },
   computed: {
     scheduleURL() {
       return `${this.endpoint}?fecha=${format(this.selectedDay, "yyyy-MM-dd")}`;
-    },
-    horaActual() {
-      return new Date().getHours();
-    },
-    currentProgram() {
-      return this.schedule.find(program => {
-        return this.isHourBetween(
-          program.hora,
-          program.hora_final,
-          this.currentTime
-        );
-      });
-    },
-    nextProgram() {
-      return {};
-    },
-    selectedWeekL() {
-      return selectedWeek && selectedWeek.value;
     }
   },
   watch: {
@@ -139,17 +93,6 @@ export default defineComponent({
     }
   },
   methods: {
-    nextWeek,
-    prevWeek,
-    isHourBetween(horaInicial = "", horaFinal = "", fechaActual) {
-      const primerahoraString = horaInicial.replace(":", "");
-      const segundahoraString = horaFinal.replace(":", "");
-      const horaActualString = format(fechaActual, "HHmm");
-      return (
-        horaActualString >= primerahoraString &&
-        horaActualString <= segundahoraString
-      );
-    },
     async getSchedules() {
       this.schedule = await axios(this.scheduleURL)
         .then(({ data }) => {
@@ -209,7 +152,6 @@ export default defineComponent({
       this.getSchedules();
       this.isFormOpen = false;
       this.formData = {};
-      console.log(item);
     },
 
     onCanceled() {

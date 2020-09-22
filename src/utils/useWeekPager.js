@@ -1,7 +1,7 @@
-import { watch, ref, toRefs } from "vue";
+import { watch, ref } from "vue";
 
 export const useWeekPager = props => {
-  const { day, week, nextMode } = toRefs(props);
+  const nextMode = ref(props.nextMode);
 
   // Utils
   const getISODate = date => {
@@ -67,7 +67,6 @@ export const useWeekPager = props => {
     selectedWeek.value = getWeek(new Date());
   };
 
-  watch(week, setWeek, { immediate: true });
   watch(nextMode, checkWeek, { immediate: true });
 
   // Day
@@ -75,8 +74,6 @@ export const useWeekPager = props => {
   const setDay = value => {
     selectedDay.value = value || selectedDay.value;
   };
-
-  watch(day, setDay, { immediate: true });
 
   // controls
   const nextWeek = () => {
@@ -87,7 +84,11 @@ export const useWeekPager = props => {
       )
     );
     selectedWeek.value = getWeek(date);
-    setSelectedDayInWeek(selectedDay.value, selectedWeek.value, nextMode.value);
+    selectedDay.value = setSelectedDayInWeek(
+      selectedDay.value,
+      selectedWeek.value,
+      nextMode.value
+    );
   };
 
   const prevWeek = () => {
@@ -98,7 +99,11 @@ export const useWeekPager = props => {
       )
     );
     selectedWeek.value = getWeek(date);
-    setSelectedDayInWeek(selectedDay.value, selectedWeek.value, nextMode.value);
+    selectedDay.value = setSelectedDayInWeek(
+      selectedDay.value,
+      selectedWeek.value,
+      nextMode.value
+    );
   };
 
   checkWeek();
@@ -110,7 +115,11 @@ export const useWeekPager = props => {
     firstDayOfWeek,
 
     // methods
-    prevWeek,
-    nextWeek
+    controls: {
+      setWeek,
+      setDay,
+      previous: prevWeek,
+      next: nextWeek
+    }
   };
 };
