@@ -69,7 +69,7 @@
 <script>
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { useWeekPager } from "@/utils/useWeekPager.js";
+import { useWeekPager } from "@/utils/useWeekPager";
 import { watch, toRefs, ref, computed } from "vue";
 
 export default {

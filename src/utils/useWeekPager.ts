@@ -1,22 +1,25 @@
-import { getMonth, isLastDayOfMonth } from "date-fns";
+import { isLastDayOfMonth } from "date-fns";
 import { watch, ref } from "vue";
 
-export const useWeekPager = props => {
+interface Props {
+  nextMode: string
+} 
+
+export const useWeekPager = (props: Props) => {
   const nextMode = ref(props.nextMode);
 
   // Utils
-  const getISODate = date => {
+  const getISODate = (date: Date): string => {
     return date.toISOString().slice(0, 10);
   };
 
-  const setSelectedDayInWeek = (selectedDay, selectedWeek, nextMode) => {
-    let day;
+  const setSelectedDayInWeek = (selectedDay: Date, selectedWeek: Array<Date>, nextMode: string): Date => {
+    let day: Date = new Date();
     if (nextMode != "week") {
       day = selectedWeek[3];
     } else {
-      const isSelectedDayInWeek = selectedWeek
-        .filter(date => getISODate(date))
-        .includes(getISODate(selectedDay));
+      const todayISO = getISODate(selectedDay);
+      const isSelectedDayInWeek = selectedWeek.filter(date => getISODate(date).includes(todayISO));
       if (!isSelectedDayInWeek) {
         day = selectedWeek[0];
       }
@@ -25,19 +28,9 @@ export const useWeekPager = props => {
     return day;
   };
 
-  // state
-  const firstDayOfWeek = ref(0);
-
-  // Week
-  const selectedWeek = ref([]);
-
-  const setWeek = value => {
-    selectedWeek.value = value || selectedWeek.value;
-  };
-
-  const getWeekDays = date => {
+  const getWeekDays = (date: Date): Array<Date> => {
     const firstDate = new Date(date.setDate(date.getDate() - 4));
-    const selectedWeek = [];
+    const selectedWeek: Array<Date> = [];
     for (let i = 0; i < 7; i++) {
       firstDate.setDate(firstDate.getDate() + 1);
       selectedWeek.push(new Date(firstDate));
@@ -45,7 +38,18 @@ export const useWeekPager = props => {
     return selectedWeek;
   };
 
-  const getCalendarWeek = date => {
+  // state
+  const firstDayOfWeek = ref(0);
+
+  // Week
+  const selectedWeek = ref(getWeekDays(new Date));
+
+  const setWeek = ( value: Array<Date>): void => {
+    selectedWeek.value = value || selectedWeek.value;
+  };
+
+
+  const getCalendarWeek = (date: Date) => {
     const firstDate = new Date(
       date.setDate(date.getDate() - date.getDay() + firstDayOfWeek.value)
     );
@@ -59,7 +63,7 @@ export const useWeekPager = props => {
     return week;
   };
 
-  const getCalendarMonth = date => {
+  const getCalendarMonth = (date: Date) => {
     const firstDate = new Date(
       date.setDate(date.getDate() - (date.getDate() - 1))
     );
@@ -71,11 +75,11 @@ export const useWeekPager = props => {
     return month;
   };
 
-  const getWeek = date => {
-    const controls = {
-      day: getWeekDays,
-      week: getCalendarWeek,
-      month: getCalendarMonth
+  const getWeek = (date: Date): Array<Date> => {
+    const controls: { [ key: string ] : Function } = {
+      "day": getWeekDays,
+      "week": getCalendarWeek,
+      "month": getCalendarMonth
     };
     const mode = nextMode.value || "week";
     return controls[mode](date);
@@ -89,7 +93,7 @@ export const useWeekPager = props => {
 
   // Day
   const selectedDay = ref(new Date());
-  const setDay = value => {
+  const setDay = (value: Date) => {
     selectedDay.value = value || selectedDay.value;
   };
 
