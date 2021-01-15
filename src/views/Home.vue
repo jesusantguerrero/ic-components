@@ -1,6 +1,26 @@
 <template>
   <div id="app" class="w-full flex justify-center flex-col items-center py-12">
+      <form>
+        <div>
+          <label for=""> Client Id</label>
+          <input type="text" v-model="formData.clientId" class="form-control" />
+        </div>
+
+        <div>
+          <label for=""> Api key</label>
+          <input type="text" v-model="formData.apiKey" class="form-control" />
+        </div>
+
+        <div>
+          <label for=""> Scope</label>
+          <input type="text" v-model="formData.scope" class="form-control" />
+        </div>
+      </form>
     <div class="flex" style="width:1200px">
+
+      <button @click="handleAuth">
+        Sign With Google
+      </button>
       <div class="w-3/5 mr-2">
         <div class="bg-black w-full h-full mr-2 rounded">
           <iframe
@@ -33,6 +53,7 @@
 <script>
 import IcScheduleView from "@/components/schedule";
 import IcScheduleHeader from "@/components/schedule/header";
+import useGoogleAuth from "@/utils/useGoogleAuth";
 import { defineComponent } from "vue";
 
 export default defineComponent({
@@ -46,6 +67,21 @@ export default defineComponent({
   components: {
     IcScheduleView,
     IcScheduleHeader
+  },
+  data() {
+    return {
+      formData: {
+        scope: "",
+        clientId: "ic-daily-1605823129076",
+        apiKey: "587675303568-jhrj3u7gl2s8e5d47j46v1a3bi9bmits.apps.googleusercontent.com",
+        accessType: "offline"
+      }
+    };
+  },
+  methods: {
+    handleAuth() {
+      const { authInstance, user } = useGoogleAuth(this.formData);
+    }
   }
 });
 </script>
